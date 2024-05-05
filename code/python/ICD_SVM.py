@@ -18,15 +18,15 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 # import all datasets
 #------------------------
-R1 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R1_M8.dta')
-R08 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R0.8_M16.dta')
-R06 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R0.6_M32.dta')
-R05 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R0.5_M47.dta')
-R01 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R0.1_M314.dta')
-R001 = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\R0.01_M1078.dta')
-CCS = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\ccs.dta')
-ICD_HIGHEST = pd.read_stata(r'C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\Data_ICD_Recoded_Highest_Hirarchy_90_days.dta')
-raw = pd.read_stata(r"C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Final_Datasets_To_Implement_Models\Selected_Variables_Final_Model_90_days.dta")
+R1 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R1_M8.dta')
+R08 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R0.8_M16.dta')
+R06 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R0.6_M32.dta')
+R05 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R0.5_M47.dta')
+R01 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R0.1_M314.dta')
+R001 = pd.read_stata(r'\Final_Datasets_To_Implement_Models\R0.01_M1078.dta')
+CCS = pd.read_stata(r'\Final_Datasets_To_Implement_Models\ccs.dta')
+ICD_HIGHEST = pd.read_stata(r'\Final_Datasets_To_Implement_Models\Data_ICD_Recoded_Highest_Hirarchy_90_days.dta')
+raw = pd.read_stata(r"\Final_Datasets_To_Implement_Models\Selected_Variables_Final_Model_90_days.dta")
 
 ##########################
 #   1. Raw dataset       #
@@ -1794,20 +1794,3 @@ plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 #sklearnex.unpatch_sklearn() # unpatch
 
-######################################################################################
-#  Testinf if there is a significant difference between ROC AUC of these models
-######################################################################################
-#https://stackoverflow.com/questions/52373318/how-to-compare-roc-auc-scores-of-different-binary-classifiers-and-assess-statist
-def permutation_test_between_clfs(y_test, pred_proba_1, pred_proba_2, nsamples=1000):
-    auc_differences = []
-    auc1 = roc_auc_score(y_test.ravel(), pred_proba_1.ravel())
-    auc2 = roc_auc_score(y_test.ravel(), pred_proba_2.ravel())
-    observed_difference = auc1 - auc2
-    for _ in range(nsamples):
-        mask = np.random.randint(2, size=len(pred_proba_1.ravel()))
-        p1 = np.where(mask, pred_proba_1.ravel(), pred_proba_2.ravel())
-        p2 = np.where(mask, pred_proba_2.ravel(), pred_proba_1.ravel())
-        auc1 = roc_auc_score(y_test.ravel(), p1)
-        auc2 = roc_auc_score(y_test.ravel(), p2)
-        auc_differences(auc1 - auc2)
-    return observed_difference, np.mean(auc_differences >= observed_difference)
