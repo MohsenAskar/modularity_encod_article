@@ -6,3 +6,5 @@ This repository contains supplementary materials for the article:
 
 ## Authors
 **Mohsen Askar, Lars Småbrekke, Einar Holsbø, Lars Ailo Bongo, Kristian Svendsen**
+
+### The repository contain a sample file of the used datasets and code of preprocessing and ML models implementation
