@@ -1,1 +1,7 @@
-
+Files
+-------------
+- Preprocessing_Cone_Stata: includes the data preprocessing part and networks' generation done in Stata.
+- Log_Reg_ICD: includes the logestic regression models on all datasets of ICD codes experiments (pyhton file)
+- SVM_ICD: includes the  Support Vector Machine models on all datasets of ICD codes experiments (pyhton file)
+- GBM_ICD : includes the Gradient Boosting Machine models on all datasets of ICD codes experiments (pyhton file)
+- DRG_Modularity: includes all three models impelemnted for DRG codes experiments (pyhton file)
