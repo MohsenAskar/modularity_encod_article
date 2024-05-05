@@ -12,7 +12,7 @@ stata_setup.config("C:/Program Files/Stata17", "mp")
 // 1. Importing, perprocessing patients.csv file 
 //-------------------------------------------------
 // 1.a. Creating a variable for date of birth
-import delimited "D:\MIMIC_III\MIMIC_III_Extract\PATIENTS.csv", encoding(UTF-8)
+import delimited "\PATIENTS.csv", encoding(UTF-8)
 codebook dob //deidentified date of birth
 
 //  Reformatting date variable in readable dates
@@ -24,11 +24,11 @@ recode gender_binary (0=1) if gender =="M"
 drop gender
 rename gender_binary gender
 // saving
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Tempor_Data_Files\Patients_Info.dta"
+save "\Patients_Info.dta"
 
 // 2. Importing, determining readmissions (outcomes)
 //-----------------------------------------------------
-import delimited "D:\MIMIC_III\MIMIC_III_Extract\ADMISSIONS.csv", encoding(ISO-8859-2) clear 
+import delimited "\ADMISSIONS.csv", encoding(ISO-8859-2) clear 
 
 gen admittime2=date(admittime,"YMD###")
 
@@ -86,12 +86,12 @@ replace language = "na" if (language=="")
 replace marital_status = "na" if (marital_status =="")
 replace religion = "na" if (religion =="")
 //Saving
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Tempor_Data_Files\Readmissions_LOS.dta"
+save "\Readmissions_LOS.dta"
 
 *** Joining files (Master file is Readmission_LOS.dta)
 //----------------------------------------------------------
 // Joining with Patients_Info
-joinby subject_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Tempor_Data_Files\Patients_Info.dta"
+joinby subject_id using "\Patients_Info.dta"
 
 // Note that Patients who are older than 89 years old at any time in the database have had their date of birth shifted to obscure their age and comply with HIPAA. The shift process was as follows: the patient’s age at their first admission was determined. The date of birth was then set to exactly 300 years before their first admission. see https://mimic.mit.edu/docs/iii/tables/patients/ 
 
@@ -124,9 +124,9 @@ xfill age_group , i(subject_id)
 
 ** Joining with ICD codes 
 //------------------------------------
-joinby subject_id hadm_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\ICD_9_MIMIC_III.dta"
+joinby subject_id hadm_id using "\ICD_9_MIMIC_III.dta"
 // Saving 
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_File.dta"
+save "\Main_File.dta"
 
 ** Exclusions
 //----------------
@@ -145,11 +145,11 @@ drop if (hospital_expire_flag == 1) // (78,291 obseravtions)
 // 4. drop if ICD code is missing 
 drop if icd9_code =="" // (8 obseravtions excluded)
 // 5. drop icd codes which has a registration error
-merge m:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Error_Registered_ICD_Codes_In_MIMIC_data.dta"
+merge m:1 icd9_code using "\Main_Datasets_For_Analysis\Error_Registered_ICD_Codes_In_MIMIC_data.dta"
 drop if _merge == 3 //(10,078 observations deleted)
 drop if _merge == 2 // (18 observations deleted), Total obs. after exclusions 442,367 (29,247 unique patients and 37,762 unique admissions)
 drop short_title long_title _merge
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Data_After_Exclusions.dta"
+save "\Main_Datasets_For_Analysis\Data_After_Exclusions.dta"
 
 ** Keeping only relevant variables for the final model
 //--------------------------------------------------------
@@ -161,7 +161,7 @@ keep subject_id hadm_id admission_location discharge_location insurance marital_
 
 // drop duplicates if any 
 duplicates drop // 42 obseravtions dropped
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Selected_Variables_Final_Model.dta", replace //final model data
+save "\Selected_Variables_Final_Model.dta", replace //final model data
 
 // As we are going to implement log. reg. we should remove highly correlated variables to avoid multicolinearity
 correlate los readmission_90 los_ED ED_admission no_ED_admissions gender age_group
@@ -170,7 +170,7 @@ drop ED_admission
 // save
 
 ** Make dataset in which we recode ICD-9 codes to 18 codes which represent the highest hirarchy in ICD-9
-use "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Selected_Variables_Final_Model.dta"
+use "\Selected_Variables_Final_Model.dta"
 // extract the first 3 character of ICD9 codes
 gen icd_gruppe =substr(icd9_code,1,3)
 // Recode icd9-codes which starts with E or V
@@ -204,19 +204,19 @@ tab icd_gruppe
 // Drop ICD codes
 drop icd9_code
 duplicates drop 
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Data_ICD_Recoded_Highest_Hirarchy_90_days.dta"
+save "\Data_ICD_Recoded_Highest_Hirarchy_90_days.dta"
 
 ** Making ICD networks from MIMIC III dataset (full file without exclusions)
 // 1. Network of the whole MIMIC_III (Main_Network)
-import delimited "D:\MIMIC_III\MIMIC_III_Extract\DIAGNOSES_ICD.csv", encoding(ISO-8859-2)
-merge m:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Error_Registered_ICD_Codes_In_MIMIC_data.dta"
+import delimited "\DIAGNOSES_ICD.csv", encoding(ISO-8859-2)
+merge m:1 icd9_code using "\Main_Datasets_For_Analysis\Error_Registered_ICD_Codes_In_MIMIC_data.dta"
 drop if _merge == 3
 drop if _merge == 2
 keep subject_id icd9_code
 duplicates drop
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
+save "\Patient_MIMIC_III_ICD.dta"
 rename icd9_code icd9_code2
-joinby subject_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
+joinby subject_id using "\Patient_MIMIC_III_ICD.dta"
 bysort icd9_code icd9_code2 :egen edges=count(subject_id)
 drop if icd9_code == icd9_code2
 drop subject_id
@@ -240,36 +240,36 @@ nwexport, type(pajek)
 // Merging ICD codes with different grouping schemes
 // Number of unique ICD9 codes in mimic iii file (14,567) in resolution files (6,840) in CSS file (15,071) 
 // we perform moularity in Gephi and export files as .csv which will be imported to Stata like this for exapmle:
-import delimited "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\CSV_Files_Networks\R0.01_M1078.csv", clear 
+import delimited "\CSV_Files_Networks\R0.01_M1078.csv", clear 
 rename label icd9_code
 drop timeset
 replace icd9_code = subinstr(icd9_code , "_", "", .)
 // same with all files 
 // Merging ICD codes to their corresponding css and modularity group
-merge 1:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Grouping_Systems\Stata_Files\ICD_Diagnosis_From_MIMIC.dta"
+merge 1:1 icd9_code using "\Grouping_Systems\Stata_Files\ICD_Diagnosis_From_MIMIC.dta"
 drop if _merge == 2
 drop _merge
 drop row_id
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Grouping_Systems\Stata_Files\R1_M8.dta", replace
+save "\Grouping_Systems\Stata_Files\R1_M8.dta", replace
 // and same for other files
 
 // For css file 
-import delimited "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Grouping_Systems\icd9_to_singleCCScategory.csv", clear 
+import delimited "\Grouping_Systems\icd9_to_singleCCScategory.csv", clear 
 rename icd9cmcode icd9_code
-merge 1:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Grouping_Systems\Stata_Files\ICD_Diagnosis_From_MIMIC.dta"
+merge 1:1 icd9_code using "\Grouping_Systems\Stata_Files\ICD_Diagnosis_From_MIMIC.dta"
 drop if _merge == 1
 drop if _merge == 2
 drop _merge row_id
 
 ** Recoding ICD accoriding to their referance
-use "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\90_days\Selected_Variables_Final_Model.dta"
+use "\Selected_Variables_Final_Model.dta"
 // merge with the referance file
-merge m:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Grouping_Systems\Stata_Files\R0.5_M47.dta"
+merge m:1 icd9_code using "\Grouping_Systems\Stata_Files\R0.5_M47.dta"
 drop if _merge == 1
 drop if _merge == 2
 drop _merge long_title short_title id icd9_code
 duplicates drop
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\test_R0.5_M47.dta"
+save "\test_R0.5_M47.dta"
 // same with other files
 
 ***************************
@@ -278,14 +278,14 @@ save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\test_R0.5_M47.dta"
 // Network for DRG codes
 //--------------------------  
 // Datapreprocessing for DRG is just the same as ICD dataset replacing ICD codes with DRG codes and holding the same features. For DRG we made only one resolution netwrok R1_M24 which we will compare to raw dataset using ML models 
-import delimited "D:\MIMIC_III\MIMIC_III_Extract\DRGCODES.csv", clear 
+import delimited "\DRGCODES.csv", clear 
 codebook drg_code
 sort subject_id hadm_id
 keep subject_id drg_code
 duplicates drop
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\DRG_MIMIC_III.dta"
+save "\DRG_MIMIC_III.dta"
 rename drg_code drg_code2
-joinby subject_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\DRG_MIMIC_III.dta"
+joinby subject_id using "\Desktop\DRG_MIMIC_III.dta"
 bysort drg_code2 drg_code :egen edges=count(subject_id)
 drop if drg_code2 == drg_code
 drop subject_id
@@ -307,104 +307,3 @@ nwexport, type(pajek)
    Density:  .0299384171242465
    
 *********************************************************************************************************
-// Here, ends the main work needed for the paper. What comes after are attempts or optional things which may or may not be included in the study.
-
-
-******************************
-*   Quarter the dataset      *
-******************************    
-//Optional // 2. Network of quarter the dataset (1/4 MIMIC_III) (Network_Quarter)
-//-----------------------------------------------------------------------------------
-// OPTIONAL// 10. Extracting a smaller set of dataset (1/4 of the dataset), patient ID and admission time are taken into consideration (means that we will take about 3 years of comorbidity -instead of 12- according to admission time)
-sort subject_id admittime admittime2
-keep in 1/162762  // 1/4 the dataset
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Quarter_The_Dataset.dta"
-
-// we can then exclude other variables and make an edge list from icd9_code and subject_id to generate the network (Don't forget to apply exclusions on the quarter_dataset after generating the network)
-// Applying the exclusions on Quarter_The_Dataset.dta after we made the network already
-// 1. Excluding < 18 years
-generate eighteen_years = age( date_of_birth , td(24jul2183))
-// all observations got (.) indicate date of borth after 24 july 2183 (> 18 years)
-recode eighteen_years (.=0)
-drop if eighteen_years ==0
-// 2. Elective and newborn admissions
-tab admission_type
-drop if (admission_type =="ELECTIVE")
-drop if (admission_type == "NEWBORN")
-// 3. Drop patients who died at the hospital 
-drop if (hospital_expire_flag == 1)
-// 4. drop if ICD code is missing 
-drop if icd9_code ==""
-// 5. drop icd codes which has a registration error
-merge m:1 icd9_code using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Error_Registered_ICD_Codes_In_MIMIC_data.dta"
-drop if _merge == 3
-drop if _merge == 2
-drop short_title long_title _merge
-// save 
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Quarter_The_Dataset_Exclusions_Applied.dta", replace
-
-use "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Quarter_The_Dataset_After_Exclusions.dta", clear
-
-sort subject_id admittime admittime2
-keep subject_id icd9_code
-duplicates drop
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
-rename icd9_code icd9_code2
-joinby subject_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
-bysort icd9_code icd9_code2 :egen edges=count(subject_id)
-drop if icd9_code == icd9_code2
-drop subject_id
-duplicates drop
-drop if missing(icd9_code)
-drop if missing(icd9_code2)
-nwfromedge icd9_code icd9_code2 edges, undirected keeporiginal
-nwexport, type(pajek) replace
-// Network summary 
-
-   Directed: false
-   Nodes: 4069
-   Edges: 305612
-   Minimum value:  0
-   Maximum value:  1498
-   Density:  .0369259574213065
-   
-*********************************
-*          K_means              *
-*********************************
-//OPTIONAL// ** Making data for k-means clustering according to total cooccurancies in the dataset
-//----------------------------------------------------------------------------------------------------
-import delimited "D:\MIMIC_III\MIMIC_III_Extract\DIAGNOSES_ICD.csv", encoding(ISO-8859-2)clear 
-keep subject_id icd9_code
-duplicates drop
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
-rename icd9_code icd9_code2
-joinby subject_id using "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\Patient_MIMIC_III_ICD.dta"
-bysort icd9_code icd9_code2 :egen edges=count(subject_id)
-drop if icd9_code == icd9_code2
-drop if missing(icd9_code)
-drop if missing(icd9_code2)
-drop icd9_code2
-duplicates drop
-rename edges cooccurancies
-bysort subject_id icd9_code :egen total=count(cooccurancies)
-drop cooccurancies
-rename total cooccurancies
-duplicates drop
-codebook icd9_code
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\K-means_Dataset.dta"
-
-*******************************************************
-*      Reshaping data for frequent pattern mining FPM *
-*******************************************************
-// ** Reshaping the data from long to wide format (for FRP)
-// Generating seq variable (seq of each patient's rows) to be as (j) in reshaping
-// This form of data won't be used for ML models, but for frequent pattern mining FRP //
-sort subject_id hadm_id icd9_code
-by subject_id hadm_id: gen seq =_n
-reshape wide icd9_code, i(hadm_id) j(seq) // seq is automatically dropped
-save "C:\Users\mas082\OneDrive - UiT Office 365\Desktop\ICD_Modularit_Paper\Main_Datasets_For_Analysis\Data_Short_Wide.dta"
-// replace empty cells with NaN
-foreach var of varlist icd9_code1-icd9_code39 {
-  replace `var' = "NaN" if `var' ==""
-  }
-
